@@ -1,12 +1,22 @@
 const express = require("express");
 const app = express();
 const { MongoClient } = require("mongodb");
+// const { initializeApp } = require("firebase-admin/app");
 require("dotenv").config();
+var admin = require("firebase-admin");
+
 const cors = require("cors");
 const port = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json());
+
+// firebase admin initialization
+var serviceAccount = require("./fir-login-validate-b5875-firebase-adminsdk-o983w-3e065ead9e.json");
+
+admin.initializeApp({
+   credential: admin.credential.cert(serviceAccount),
+});
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nebgy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 // console.log(uri);
@@ -14,6 +24,18 @@ const client = new MongoClient(uri, {
    useNewUrlParser: true,
    useUnifiedTopology: true,
 });
+
+async function verifyToken(req, res, next) {
+   if (req.headers?.authorization?.startsWith("Bearer ")) {
+      const idToken = req.headers.authorization.split("Bearer ")[1];
+      // console.log("inside separate func", idToken);
+      try {
+         const decodedUser = await admin.auth().verifyIdToken(idToken);
+         console.log(decodedUser);
+      } catch {}
+   }
+   next();
+}
 
 async function run() {
    try {
@@ -54,8 +76,8 @@ async function run() {
       });
 
       // get orders api
-      app.get("/orders", async (req, res) => {
-         console.log(req.headers);
+      app.get("/orders", verifyToken, async (req, res) => {
+         // console.log(req.headers.authorization);
          let query = {};
          const email = req.query.email;
          if (email) {
