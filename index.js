@@ -1,15 +1,12 @@
 const express = require("express");
 const app = express();
 const { MongoClient } = require("mongodb");
-// const { initializeApp } = require("firebase-admin/app");
+const { initializeApp } = require("firebase-admin/app");
 require("dotenv").config();
 var admin = require("firebase-admin");
 
 const cors = require("cors");
 const port = process.env.PORT || 8080;
-
-app.use(cors());
-app.use(express.json());
 
 // firebase admin initialization
 var serviceAccount = require("./fir-login-validate-b5875-firebase-adminsdk-o983w-3e065ead9e.json");
@@ -17,6 +14,10 @@ var serviceAccount = require("./fir-login-validate-b5875-firebase-adminsdk-o983w
 admin.initializeApp({
    credential: admin.credential.cert(serviceAccount),
 });
+
+// middleware
+app.use(cors());
+app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nebgy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 // console.log(uri);
@@ -30,8 +31,10 @@ async function verifyToken(req, res, next) {
       const idToken = req.headers.authorization.split("Bearer ")[1];
       // console.log("inside separate func", idToken);
       try {
+         console.log("try");
          const decodedUser = await admin.auth().verifyIdToken(idToken);
          console.log(decodedUser);
+         console.log("try 2");
       } catch {}
    }
    next();
